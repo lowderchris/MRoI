@@ -12,7 +12,7 @@ f = sunpy.io.read_file('hmi.synoptic_mr_polfil_720s.2193.Mr_polfil.fits')
 br0 = f[1].data
 
 import scipy.ndimage
-br = scipy.ndimage.zoom(br0, 0.1)
+br = scipy.ndimage.zoom(br0, 0.05)
 
 # CL - Eventually multiply this into units of flux, though for sine latitude... this shouldn't really matter at the moment
 
@@ -28,7 +28,11 @@ def mroi():
     mroi = np.zeros(br.shape)
 
     # Move along through the coordinates and compute MRoI
+    # CL - Note that for the moment, the corrected polar field maps result in... a difficult computational time, as the routine needs to search fairly far out to balance the unipolar field.
+    # CL - Think about where the speed bottleneck might be in this code... if it's something that can be simplified.
+    # CL - This could also be the perfect testbed for parallelization of Python code, given that this problem is embarassingly simple to parallelize
     for ilat in np.arange(lats.shape[0]):
+        print('Latitude row done!')
         for ilon in np.arange(lons.shape[0]):
 
             # Compute a great cicle distance map
@@ -50,6 +54,9 @@ def mroi():
             # CL - Should the distance pre or post-even be assigned?
             mroi[ilat, ilon] = r0
 
+            # For now, save this at every step to preview output
+            np.save('mroi.npy', mroi)
+
     return mroi
 
 def gen_gcmap(lat, lon, lats, lons):
@@ -65,6 +72,23 @@ def gen_gcmap(lat, lon, lats, lons):
     gcmap = rsun * np.arccos(mlats*lat + np.cos(np.arcsin(mlats))*np.cos(np.arcsin(lat))*np.cos(np.abs(mlons-lon)))
  
     return gcmap
+
+def plot(mroi, br, lats, lons)
+    '''
+    Plots charts of MRoI (Magnetic Range of Influence) and associated quantities
+    '''
+
+    f, (ax1,ax2) = subplots(2, figsize=[7,5])
+    im1 = ax1.imshow(mroi/1e11, extent=[0,360,-1,1], aspect='auto')
+    cb1 = colorbar(im1, ax=ax1, label='CR 2193 - MRoI [10$^{11}$ cm]')
+    ax1.set_ylabel('Sine Latitude')
+    im2 = ax2.imshow(br0, extent=[0,360,-1,1], aspect='auto', vmin=-50, vmax=50, cmap='Greys_r')
+    cb2 = colorbar(im2, ax=ax2, label='CR 2193 - $B_r$ [G]', extend='both')
+    ax2.set_xlabel('Carrington Longitude [degrees]')
+    ax2.set_ylabel('Sine Latitude')
+    ax1.grid()
+    ax2.grid()
+    tight_layout()
 
 if __name__ == "__main__":
     mroi()
