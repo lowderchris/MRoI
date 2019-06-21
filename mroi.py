@@ -6,6 +6,7 @@ This routine generates a map of the Magnetic Range of Influence (MRoI) for a syn
 # Import libraries
 import numpy as np
 import sunpy.io
+from tqdm import tqdm
 
 # For a bit of testing... import and bin down an HMI synoptic chart of B_r
 f = sunpy.io.read_file('hmi.synoptic_mr_polfil_720s.2193.Mr_polfil.fits')
@@ -17,7 +18,7 @@ br = scipy.ndimage.zoom(br0, 0.05)
 # CL - Eventually multiply this into units of flux, though for sine latitude... this shouldn't really matter at the moment
 
 # Compute the MRoI map
-def mroi():
+def gen_mroi(br):
 
     # Define the coordinate system
     # CL - Generate this from the FITS file...
@@ -31,8 +32,8 @@ def mroi():
     # CL - Note that for the moment, the corrected polar field maps result in... a difficult computational time, as the routine needs to search fairly far out to balance the unipolar field.
     # CL - Think about where the speed bottleneck might be in this code... if it's something that can be simplified.
     # CL - This could also be the perfect testbed for parallelization of Python code, given that this problem is embarassingly simple to parallelize
+    pbar = tqdm(total=lats.shape[0]*lons.shape[0])
     for ilat in np.arange(lats.shape[0]):
-        print('Latitude row done!')
         for ilon in np.arange(lons.shape[0]):
 
             # Compute a great cicle distance map
@@ -47,16 +48,19 @@ def mroi():
             for d in dvals[1:]:
                 wdr = where(np.logical_and((gcmap > r0),(gcmap <= d)))
                 iflux += br[wdr].sum()
-                r0 = d
+                r0 = d      # Distance assigned post balance
                 if ( np.sign(iflux) != np.sign(oflux) ): break
 
             # Assign this computed value of MRoI
-            # CL - Should the distance pre or post-even be assigned?
             mroi[ilat, ilon] = r0
 
             # For now, save this at every step to preview output
             np.save('mroi.npy', mroi)
 
+            # Update the progress bar
+            pbar.update(1)
+
+    pbar.close()
     return mroi
 
 def gen_gcmap(lat, lon, lats, lons):
