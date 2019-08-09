@@ -15,13 +15,10 @@ br0 = f[1].data
 import scipy.ndimage
 br = scipy.ndimage.zoom(br0, 0.05)
 
-# CL - Eventually multiply this into units of flux, though for sine latitude... this shouldn't really matter at the moment
-
 # Compute the MRoI map
 def gen_mroi(br):
 
     # Define the coordinate system
-    # CL - Generate this from the FITS file...
     lats = np.linspace(-1, 1, br.shape[0])
     lons = np.linspace(0, 2*np.pi, br.shape[1])
 
@@ -29,9 +26,6 @@ def gen_mroi(br):
     mroi = np.zeros(br.shape)
 
     # Move along through the coordinates and compute MRoI
-    # CL - Note that for the moment, the corrected polar field maps result in... a difficult computational time, as the routine needs to search fairly far out to balance the unipolar field.
-    # CL - Think about where the speed bottleneck might be in this code... if it's something that can be simplified.
-    # CL - This could also be the perfect testbed for parallelization of Python code, given that this problem is embarassingly simple to parallelize
     pbar = tqdm(total=lats.shape[0]*lons.shape[0])
     for ilat in np.arange(lats.shape[0]):
         for ilon in np.arange(lons.shape[0]):
