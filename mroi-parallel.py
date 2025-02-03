@@ -11,14 +11,14 @@ datadir = '/home/lowder/data/'
 
 for file in os.listdir(datadir + 'hmi.Synoptic_Mr.polfil/'):
     if file.endswith('.fits'):
-        full_path = os.path.join(datadir, file)
+        full_path = os.path.join(datadir, 'hmi.Synoptic_Mr.polfil/', file)
         print(f"Processing file: {full_path}")
 
         crnum_match = re.search(r'\d{4}', file)
         if crnum_match:
             crnum = crnum_match.group()
 
-        with fits.open(file) as hdul:
+        with fits.open(full_path) as hdul:
             br0 = hdul[1].data
 
         br = scipy.ndimage.zoom(br0, 0.1)
@@ -74,6 +74,8 @@ for file in os.listdir(datadir + 'hmi.Synoptic_Mr.polfil/'):
 
 
         def mroi_coordinate(ilat, ilon, br, lats, lons):
+            os.nice(19)
+
             gcmap = gen_gcmap(lats[ilat], lons[ilon], lats, lons)
             dvals = np.unique(gcmap)
 
@@ -107,7 +109,7 @@ for file in os.listdir(datadir + 'hmi.Synoptic_Mr.polfil/'):
 
 
         f, (ax1,ax2) = plt.subplots(2, figsize=[10,7])
-        im1 = ax1.imshow(mroi/1e11, extent=[0,360,-1,1], aspect='auto')
+        im1 = ax1.imshow(mroi/1e11, extent=[0,360,-1,1], aspect='auto', cmap='magma')
         cb1 = plt.colorbar(im1, ax=ax1, label='CR 2193 - MRoI [10$^{11}$ cm]')
         ax1.set_ylabel('Sine Latitude')
         im2 = ax2.imshow(br0, extent=[0,360,-1,1], aspect='auto', vmin=-50, vmax=50, cmap='Greys_r')
